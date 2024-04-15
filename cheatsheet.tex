@@ -126,6 +126,76 @@
       \item \textbf{Type 2 Hypervisor:} Runs on host OS (more overhead), guest OS runs inside VM (more common for normal users)
     \end{itemize}
 
+    \section{Process Abstraction}
+    \subsection{Introduction to Process Abstraction}
+    \begin{itemize}
+      \item \textbf{Process Definition:} Abstraction to describe a running program
+      \item \textbf{Process Abstraction Definition:} Dynamic abstraction for executing program (using data structure to represent information required to describe a running program); Consists of
+      \begin{enumerate}
+        \item Memory Context (code, data)
+        \item Hardware Context (registers, program counter)
+        \item OS Context (process properties, resources used)
+      \end{enumerate}
+    \end{itemize}
 
+    \subsection{Memory Context}
+    \subsubsection{Stack Memory}
+    \begin{itemize}
+      \item \textbf{Stack Memory Region:} Memory region to store information regarding function invocation (described by a stack frame)
+      \item \textbf{Stack Frame:} Contains Return address of Caller, Parameters for function, Local variables, other information; Different ways to set up stack frame
+      \item \textbf{Stack Pointer:} Indicates top of stack region
+      \item \textbf{Frame Pointer:} Points to a fixed location in stack frame, other items are accessed as displacement from fboxsep
+      \item \textbf{Saved Registers:} No. of General Purpose Registers (GPRs) are limited $\rightarrow$ memory can temporarily hold GPR value when GPRs are exhausted so that GPRs can be used for other purposes $\rightarrow$ GPR value can be restored afterwards 
+      \item \textbf{Stack Frame Illustration:}
+      \includegraphics[width=0.9\linewidth]{04_stack_frame.png}
+      \begin{enumerate}
+        \item \underline{Executing function call:} Caller passes parameters with registers \& saves Return PC on stack $\rightarrow$ transfers control to callee $\rightarrow$ Callee saves registers used by it, saves old FP \& SP, allocates space for local variables of callee, adjusts SP to point to new stack top
+        \item \underline{Returning from function call:} Callee restores saved registers, FP \& SP $\rightarrow$ Transfers control to caller using saved Return PC
+      \end{enumerate}
+    \end{itemize}
+
+    \subsubsection{Heap Memory}
+    \begin{itemize}
+      \item \textbf{Dynamically allocated memory:} Acquire memory space during execution time; Cannot be placed in data region as memory is allocated at runtime only, size is not known during compilation; Cannot be placed in stack region as deallocation time is not definite
+    \end{itemize}
+
+    \subsection{OS Context}
+    \begin{itemize}
+      \item \textbf{Process ID:} Unique among processes, distinguishes processes from each other
+      \item \textbf{Process Model:} Set of states \& transitions of a process
+      \includegraphics[width=0.9\linewidth]{05_process_model.png}
+      \begin{enumerate}
+        \item New: New process created, not yet ready
+        \item Ready: Process waiting to run
+        \item Running: Process being executed on CPU
+        \item Blocked: Process waiting for event (eg. system call, waiting for I/O)
+        \item Terminated: Process has finished execution
+      \end{enumerate}
+      \item \textbf{Process Table \& Process Control Block:} PCB stores entire execution context for a process (Hardware: PC, FP, SP, GPRs; Memory: Text, Data, Heap, Stack; OS: PID, Process State) $\rightarrow$ Kernel maintains PCBs for all processes in 1 table
+    \end{itemize}
+
+    \subsection{System Calls}
+    \begin{itemize}
+      \item \textbf{Definition of System Call:} API to OS (Provides way of calling services within Kernel, NOT same as normal function call)
+      \item \textbf{Function Wrapper:} Library version that has same name \& parameters as system call (eg. \lstinline|getPid()| is library call that has same name as system call)
+      \item \textbf{Function Adapter:} Library version has less parameters, more flexible parameter values compared to system call (eg. \lstinline|printf()| is library call that makes \lstinline|write()| system call)
+      \item \textbf{System Call Mechanism:}
+      \begin{enumerate}
+        \item User program invokes library call via normal function call
+        \item Library call places system call number in a register
+        \item Library call executes TRAP to switch from user mode to kernel mode
+        \item In kernel mode, system call handler is determined (handled by dispatcher)
+        \item System call handler is executed
+        \item System call handler ends, control returns to library call (switch from kernel mode to user mode)
+        \item Library call returns to user program via normal function return
+      \end{enumerate}
+    \end{itemize}
+
+    \subsection{Exceptions \& Interrupts}
+    \begin{itemize}
+      \item \textbf{Exceptions:} Caused by machine level instructions, synchronous (fixed point in program execution), executes exception handler
+      \item \textbf{Interrupts:} Caused by external events, asynchronous (any point in program execution), executes interrupt handler
+      \item \textbf{Handler Routine:} Save register/CPU state $\rightarrow$ Perform handler routine $\rightarrow$ Restore register/CPU $\rightarrow$ Return from interrupt
+    \end{itemize}
 \end{multicols*}
 \end{document}
