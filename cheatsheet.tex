@@ -77,7 +77,7 @@
 \begin{document}
 \raggedright
 \tiny
-\begin{multicols*}{6}
+\begin{multicols*}{5}
     \setlength{\columnseprule}{0.25pt}
 
     \begin{tightcenter}
@@ -90,6 +90,42 @@
         }
     \end{tightcenter}
     
-    
+    \section{Introduction to OS}
+    \subsection{OS Basic Concepts}
+    \begin{itemize}
+      \item \textbf{Definition of OS:} Program that acts as intermediary btw. computer user \& computer hardware
+      \item \textbf{Types of OS:}
+      \begin{enumerate}
+        \item \underline{Mainframe OS}: Executes user program one at a time (but simple batch processing is inefficient since CPU idle when performing I/O)
+        \item \underline{Time-sharing OS}: Allows multiple users to interact with machine, user job scheduling (Illusion of concurrency); Provides sharing of CPU time, memory, storage; Virtualisation of hardware 
+      \end{enumerate}
+      \item \textbf{Motivations of OS:}
+      \begin{enumerate}
+        \item \underline{Abstraction:} Hides low level details, present common high level functionality to user; Provides efficiency \& portability, but latency is present
+        \item \underline{Resource Allocator:} Multiple programs can execute simultaneously $\rightarrow$ OS manages all resources $\rightarrow$ Arbitrate conflicting requests
+        \item \underline{Control Program:} OS controls execution of programs $\rightarrow$ Prevents errors \& improper use of computer, provides security \& protection
+      \end{enumerate}
+    \end{itemize}
+
+    \subsection{OS Structures}
+    \begin{itemize}
+      \item \textbf{Generic OS}: OS is known as Kernel (Deals with hardware, provides system call interface, special code for interrupt handlers, device drivers)
+      \includegraphics[width=0.9\linewidth]{01_general_os.png}
+      \item \textbf{Monolithic OS}: Kernel == 1 big program, (+) good performance (-) highly coupled components, complicated internal structure, eg. Most Unix variants, Windows
+      \includegraphics[width=0.9\linewidth]{02_monolithic_os.png}
+      \item \textbf{Microkernel OS}: Kernel is small, provides basic \& essential facilities, uses IPC to communicate, (+) More modular, robust, better isolation, protection between kernel \& user spaces (-) lower performance
+      \includegraphics[width=0.9\linewidth]{03_microkernel_os.png}
+      \item \textbf{Layered Systems OS:} Generalisation of Monolithic system, hierarchy of layers where upper layers make use of lower layers $\rightarrow$ Lowest layer is hardware, Highest layer is user interface
+      \item \textbf{Client-Server Model:} Variation of Microkernel where server process is built on top of microkernel, client \& server process can be on separate machine
+    \end{itemize}
+
+    \subsection{Virtual Machines}
+    \begin{itemize}
+      \item \textbf{Definition:} Software emulation of hardware, normal OS then run on top of VM (aka. Hypervisor)
+      \item \textbf{Type 1 Hypervisor:} Runs directly on hardware (more efficient), provides individual VMs to guest OSes
+      \item \textbf{Type 2 Hypervisor:} Runs on host OS (more overhead), guest OS runs inside VM (more common for normal users)
+    \end{itemize}
+
+
 \end{multicols*}
 \end{document}
