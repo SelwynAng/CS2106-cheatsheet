@@ -353,5 +353,73 @@
         \item \underline{Analysis of Buddy System:} (+): Best case O(1), worst case O(logn) allocation \& deallocation time (due to tree structure), (-): Has internal \& external fragmentation
       \end{itemize}
     \end{itemize}
+
+    \section{Memory (Disjoint)}
+    \textbf{ASSUMPTION REMOVED: Process fits in memory as contiguous piece $\rightarrow$ Process can now fit into memory but split into disjoint chunks}
+    \subsection{Paging Scheme}
+    \begin{itemize}
+      \item \textbf{Overview:}
+      \begin{itemize}
+        \item \underline{Physical Frames:} Physical Memory is split into regions of fixed size (Frames are small VS partitions are big to accommodate largest process memory space)
+        \item \underline{Logical Page:} Logical Memory of process is split into regions of same size
+        \item Size of page == Size of frame (Pages of process are loaded into any available frame where logical memory is contiguous VS physical memory is disjoint)
+      \end{itemize}
+      \item \textbf{Page Table:}
+      \begin{itemize}
+        \item Maps Pages to Frames
+        \item \underline{Address Translation}
+        \begin{itemize}
+          \item Method 1: PA = FrameNo. * sizeof(frame) + offset
+          \item Method 2: PA = F * 2\textsuperscript{n} + O (given page/frame size of 2\textsuperscript{n} \& m bits of LA $\rightarrow$ P = most sig. m-n bits of LA, O = remaining n bits of LA $\rightarrow$ use P to find F via page table)
+          \item Eg. Page size == 2\textsuperscript{2} bytes \& Page 00 maps to Frame 010, hence LA 00\underline{0}1 maps to 010\underline{01}, where 01 is offset
+        \end{itemize}
+      \end{itemize}
+      \item \textbf{Fragmentation:} External fragmentation is not possible (every free frame can be used), Internal fragmentation is insignificant (logical memory space may not be multiple of page size $\rightarrow$ max 1 page per process not fully utilized)
+      \item \textbf{Implementation of Paging Scheme:}
+      \begin{itemize}
+        \item OS stores Page Table info in PCB (Page Table is per process, not globally shared across processes)
+        \item Memory context of process includes Page Table (or pointers to it since Page Tables are big)
+        \item Requires 2 memory accesses for every memory reference (1st access to read PTE to get frame number, 2nd access to access actual memory item)
+      \end{itemize}
+      \item \textbf{Translation Look-Aside Buffer (TLB):} Aims to speed up address translation by acting as a cache for PTEs (TLB is a register in CPU, part of process' hardware context $\rightarrow$ page table is huge, cannot store entire page table within TLB, but TLB hit rate will still be high due to spatial \& temporal locality)
+      \includegraphics[width=0.8\linewidth]{17_TLB.png}
+      \begin{itemize}
+        \item \underline{Address Translation with TLB:} Use page number to search TLB $\rightarrow$ TLB-Hit (Frame no. retrieved, generate PA) OR TLB-Miss (Memory access to access page table, retrieve frame no. to generate PA \& update TLB)
+        \item \underline{Avg. Memory Access Time (AMAT)} = P(TLB\textsubscript{hit}) * Latency(TLB\textsubscript{hit}) + P(TLB\textsubscript{miss}) * Latency(TLB\textsubscript{miss}) \\ Latency(TLB\textsubscript{hit}) = TLB Access + Actual Memory Access \\ Latency(TLB\textsubscript{miss}) = TLB Access + Page Table Access + Actual Memory Access
+        \item \underline{Process Switching:} During context switching, Page Table \& TLB needs to be changed, but Frames remain same (TLB entries are flushed which causes many TLB misses to fill TLB when process resumes running)
+      \end{itemize}
+      \item \textbf{Protection Mechanism of Paging Scheme}
+      \begin{enumerate}
+        \item \underline{Access-right bit:} Each PTE has WRX bits (every memory access is checked against these bits in hardware; Child process has W = 0 initially for all pages after getting forked from parent which has W = 1 for some pages $\rightarrow$ W only changes to 1 for child when writing is needed)
+        \item \underline{Valid bit:} Each PTE has Valid bit to indicate if page is valid to access by process (Some pages may be out of range for a process)
+      \end{enumerate}
+      \item \textbf{Page Sharing Mechanism of Paging Scheme:} Page table allows several processes to share same frame (\underline{Shared code page:} Common code like standard lib, syscalls; \underline{Copy-on-write}: Parent \& child share a frame until 1 process tries to change value in it)
+    \end{itemize}
+
+    \subsection{Segmentation Scheme}
+    \begin{itemize}
+      \item \textbf{Overview:}
+      \begin{itemize}
+        \item Logical memory space of a process == Collection of memory segments mapped into contiguous physical partitions of same size
+        \item Each memory segment has (1): Name, (2): Limit; All memory reference == SegmentName + offset
+      \end{itemize}
+      \item \textbf{Segment Table:}
+      \begin{itemize}
+        \item Contains 2 fields per entry: Base \& Limit
+        \item Each segment is mapped to a contiguous physical memory region with a base address \& limit
+        \item Segment Table is much smaller than Page Table (only a few segments, i.e. Data, Code, Stack, Heap)
+        \item \underline{Address Translation}: Given LA = \{SegID, Offset\}, SegID used to look up \{Base, Limit\} of segment in Segment Table $\rightarrow$ PA = Base + Offset (offset must be less than limit for valid access, or else seg fault error thrown)
+      \end{itemize}
+      \item \textbf{Pros:} Each segment is independent contiguous memory space, segments can grow/shrink (by updating segment limit), be protected/shared independently
+      \item \textbf{Cons:} External Fragmentation (variable size contiguous memory regions)
+    \end{itemize}
+
+    \subsection{Segmentation with Paging Scheme}
+    \begin{itemize}
+      \item Each segment is composed of several pages instead of a contiguous memory region $\rightarrow$ Each segment has a Page table
+      \item Segment can grow by allocating new page to add to its Page Table
+      \item Segment Table's Base field is now base address of segment's Page Table instead of an address in physical memory
+      \includegraphics[width= 0.8\linewidth]{18_seg_with_pg.png}
+    \end{itemize}
   \end{multicols*}
 \end{document}
