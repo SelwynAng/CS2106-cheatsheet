@@ -103,6 +103,7 @@
       \end{enumerate}
       \item Bad behavior occurs when different processes interleave
       \item \underline{No. of inter-leavings} = (nm!)/(m!)\textsuperscript{n} where there are \verb|n| threads, \verb|m| instructions per thread
+      \item \underline{Relevant stages:} Load \& Store (eg. Thread A has 2 instructions, Thread B has 1 instruction $\rightarrow$ Thread A has 1L,1S,1L,1S, Thread B has 1L, 1S  $\rightarrow$ Insert B's L into 5 possible slots, insert B's S into 6 possible slots, but since only half of the permutations has L before S $\rightarrow$ No. of interleavings = 5*6/2 = 15)
     \end{itemize}
     
     \subsection{Critical Section}
@@ -148,7 +149,7 @@
       \begin{enumerate}
         \item \underline{Preemption:} P\textsubscript{0} gets preempted after while loop $\rightarrow$ P\textsubscript{1} sees that lock == 0, exits while loop \& sets lock == 1 $\rightarrow$ P\textsubscript{1} hands control back to P\textsubscript{0} while lock == 1 \& P\textsubscript{1} is in CS $\rightarrow$ P\textsubscript{0} has checked the while loop before already \& would just enter CS (Mutual Exclusion violated)
         \includegraphics[width=0.9\linewidth]{2_attempt1.jpg}
-        \item \underline{Disabling \& enabling interrupts:} Prevents context switch when a process is in CS (preemption requires interrupts), but \\ (1): Process crashes in CS, no way to re-enable interrupts $\rightarrow$ system shuts down; (2): Busy waiting employed; (3): Permission needed to disable/enable interrupts; (4): Ineffective on multi-CPU systems (If processes are on different CPUs, disabling a process' interrupts will only disable interrupts on its CPU, other CPU is not affected, race condition still occurs)
+        \item \underline{Disabling \& enabling interrupts:} Prevents context switch when a process is in CS (preemption requires interrupts), but \\ (1): Process crashes in CS, no way to re-enable interrupts $\rightarrow$ system shuts down; (2): Busy waiting employed; (3): Permission needed to disable/enable interrupts; (4): Ineffective on multi-CPU systems (If processes on different CPUs, disabling a process' interrupts will only disable interrupts on its CPU, other CPU not affected)
         \includegraphics[width=0.9\linewidth]{3_attempt2.jpg}
         \item \underline{Failure to enter CS:} P\textsubscript{0} does not manage to enter CS, P\textsubscript{1} can starve $\rightarrow$ fufils Mutual Exclusion, but violates Independence
         \includegraphics[width=0.9\linewidth]{4_attempt3.jpg}
@@ -278,5 +279,79 @@
     \end{itemize}
 
     \section{Memory (Contiguous)}
-\end{multicols*}
+    \subsection{Basics of Memory}
+    \begin{itemize}
+      \item \textbf{Memory Hardware}: Physical memory (RAM) can be treated as an array of bytes (each byte has unique physical address)
+      \item \textbf{Memory Usage of Process:} Consists of Text (instructions), Data (global variables), Heap (dynamic allocation), Stack (function invocation)
+      \item \textbf{Memory Management by OS:} OS allocates memory space to new processes, manage memory space for processes, protect memory space of processes from each other, provides memory-related system calls to processes, manage memory space for internal use
+    \end{itemize}
+    
+    \subsection{Memory Abstraction}
+    \begin{itemize}
+      \item \textbf{Without Memory Abstraction:} Process directly uses physical address (No mapping needed, but 2 processes can occupy same physical memory if both processes assume memory starts at 0 $\rightarrow$ hard to protect memory space)
+      \item \textbf{Without Memory Abstraction (Address Relocation):} Recalculate memory references when process is loaded into memory by adding unique offset to all memory references in a process (but slow loading time, not easy to distinguish memory reference from normal integer constant)
+      \item \textbf{Without Memory Abstraction (Base \& Limit Registers):}
+      \begin{itemize}
+        \item \underline{Base Register:} Initialised to starting address of process memory space at loading time (All memory references are compiled as offset from base register)
+        \item \underline{Limit Register:} Indicates range of memory space of current process
+        \item \underline{Cons:} Every access: 1 addition (\verb|Actual = Base + Addr|) \& 1 comparison (\verb|Actual < Limit|)
+      \end{itemize}
+      \item \textbf{Logical Address:} How process views its memory space (Logical address != Physical address, mapping required)
+    \end{itemize}
+
+    \subsection{Contiguous Memory Management}
+    \begin{itemize}
+      \item \textbf{Assumptions:} (1): Each process occupies a contiguous memory region, (2): Physical memory is large enough to contain $\geq$ 1 processes with complete memory space
+      \item \textbf{Memory Partition:} Contiguous memory region allocated to a single process (eg. RAM has 4 partition $\rightarrow$ RAM can store 4 processes) ~ 2 allocation schemes (Fixed size \& Variable)
+    \end{itemize}
+
+    \subsection{Fixed-size Partitioning}
+    \begin{itemize}
+      \item OS maintains information about free \& occupied partition via an ARRAY
+      \item Memory is split into equal, fixed-size partitions (1 process occupies 1 partition)
+      \item \underline{Pros:} Easy to manage, fast to allocate (every free partition is same size, no need to choose)
+      \item \underline{Cons:} Partition size needs to be large enough to contain the largest process (Smaller process will waste space $\rightarrow$ Internal Fragmentation)
+      \item \textbf{Internal Fragmentation:} Process fails to occupy whole partition, left over space WITHIN partition is wasted
+    \end{itemize}
+
+    \subsection{Dynamic Partitioning}
+    \begin{itemize}
+      \item OS maintains information about free \& occupied partition via a LINKED LIST (list of partitions \& holes with size values)
+      \includegraphics[width = 0.8\linewidth]{13_dynamic_partitioning_list.png}
+      \item Partition is created based on actual size of process
+      \item \underline{Pros:} Flexible, removes Internal Fragmentation issue
+      \item \underline{Cons:} Need to maintain more info in OS (linked list), takes more time to locate appropriate region, results in External Fragmentation
+      \item \textbf{External Fragmentation:} Free memory space is created upon process creation/termination/swapping (wasted), but can be mitigated by merging holes by moving occupied partitions to create larger hole (can fit process)
+      \item \textbf{Allocation Algorithms:} OS maintains a list of partitions \& holes $\rightarrow$ Need to locate partition of size N (size of process == N) $\rightarrow$ Search for hole with size M \textgreater N $\rightarrow$ Split hole into N \& M-N (N is new partition, M-N is new hole)
+      \begin{enumerate}
+        \item \underline{First-fit:} Take 1st hole that is large enough (Fastest runtime since search stops once 1st hole found, but least efficient for memory usage as keeps assigning at beginning of list $\rightarrow$ many holes at end of memory)
+        \item \underline{Next-fit:} Similar to First-fit, but search from last allocated block \& wrap around circular linked list (ensures memory at the end is utilized too)
+        \item \underline{Best-fit:} Find smallest hole that is large enough (but slow runtime because need to search whole list for smallest hole)
+        \item \underline{Worst-fit:} Find largest hole (slow runtime because need to search whole list for largest hole, but more efficient memory-wise as less small holes formed after assigning a process $\rightarrow$ can fit more processes in the future)
+      \end{enumerate}
+      \item \textbf{Buddy System Allocation:}
+      \begin{itemize}
+        \item \underline{Overview:} Free block is split into half repeatedly to meet request size (2 halves form buddy blocks), buddy blocks merge to form larger block when they are both free
+        \item \underline{Implementation Structure:} An array \verb|A[0...K]| is maintained where 2\textsuperscript{K} is largest block size that can be allocated, each \verb|A[J]| is a linked list keeping track of free blocks of size 2\textsuperscript{J}, Each free block is indicated by starting address
+        \includegraphics[width=0.9\linewidth]{14_buddy_system_overview.png}
+        \includegraphics[width=0.7\linewidth]{15_buddy_system_linked_list.png}
+        \includegraphics[width=0.6\linewidth]{16_buddy_system_layout.png}
+        \item \underline{Allocation Algorithm:}
+        \begin{enumerate}
+          \item Find smallest S s.t. 2\textsuperscript{S} $\geq$ N 
+          \item Check if \verb|A[S]| has free block
+          \item Yes: Remove from list \& return
+          \item No: Find smallest R from S+1 to K s.t. \verb|A[R]| has a free block $\rightarrow$ For R-1 to S, keep splitting until there is a block in S $\rightarrow$ Goto 2
+        \end{enumerate}
+        \item \underline{De-allocation Algorithm:}
+        \begin{enumerate}
+          \item To free a block B, check in \verb|A[S]| where 2\textsuperscript{S} == size of B
+          \item If buddy C of B exists, remove B \& C from list, merge B \& C to get larger block B' $\rightarrow$ Goto step 1, where B $\leftarrow$ B'
+          \item Else, insert B to list in \verb|A[S]| (buddy of B is not free yet)
+        \end{enumerate}
+        \item \underline{Locating Buddy:} B \& C are buddies of size 2\textsuperscript{S} if lowest S bits (0th - S-1th) of B \& C are identical \& Bit S is different
+        \item \underline{Analysis of Buddy System:} (+): Best case O(1), worst case O(logn) allocation \& deallocation time (due to tree structure), (-): Has internal \& external fragmentation
+      \end{itemize}
+    \end{itemize}
+  \end{multicols*}
 \end{document}
