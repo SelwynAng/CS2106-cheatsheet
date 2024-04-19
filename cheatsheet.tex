@@ -421,5 +421,121 @@
       \item Segment Table's Base field is now base address of segment's Page Table instead of an address in physical memory
       \includegraphics[width= 0.8\linewidth]{18_seg_with_pg.png}
     \end{itemize}
+
+    \section{Memory (Virtual)}
+    \textbf{ASSUMPTION REMOVED: Physical memory is large enough to contain $\geq$ 1 process with complete memory space}
+    \subsection{Introduction}
+    \begin{itemize}
+      \item \textbf{Overview:}
+      \begin{itemize}
+        \item If Logical memory space of process \textgreater Physical memory, split logical address space into small chunks (Some chunks reside in physical memory, some stored in secondary storage)
+        \item Page Table is still used for Logical to Physical address translation (with addition of \underline{Resident Bit} in PTE: Indicating whether page is resident in memory)
+      \end{itemize}
+      \item \textbf{Page Fault:} Occurs when CPU tries to access non-memory resident page $\rightarrow$ OS needs to bring non-memory resident page into physical memory (locate page in secondary storage, copy page into physical memory, update page table)
+      \item \textbf{Benefits of Virtual Memory:} (1): Physical memory size no longer restrict size of logical memory address, (2): Page not needed can be on secondary storage, allowing efficient use of physical memory, (3): More processes can reside in memory ($\downarrow$ frames per process in physical memory)
+      \item \textbf{Problems with Virtual Memory:}
+      \begin{enumerate}
+        \item \underline{Thrashing}: If memory access results in page fault most of the time, entire system slows down a lot ($\because$ secondary storage access time \textgreater physical memory access time) \textit{Cost of loading page is amortised by temporal \& spatial localities}
+        \item \underline{Large no. of pages to allocate:} Large startup cost when a new large process is launched \textit{Solved by Demand Paging}
+        \item \underline{Large Page Table:} No. of pages can be very big \textit{Solved by 2-level paging}
+        \item \underline{Lack of frames to accommodate process:} No. of pages can be very big, far exceed no. of frames in physical memory $\rightarrow$ need to decide which page to replace \textit{Solved by Page Replacement Algos}
+        \item \underline{No. of frames to allocate to a process:} Limited no. of physical memory frames $\rightarrow$ need to decide how to distribute frames amongst processes \textit{Solved by Frame Allocation Policies}
+      \end{enumerate}
+    \end{itemize}
+
+    \subsection{Demand Paging}
+    \begin{itemize}
+      \item Aims to solve problem of large startup cost (Large no. of pages to allocate when new process is launched), reduce no. of frames per process
+      \item \textbf{Mechanism:} Process starts with no memory resident page $\rightarrow$ Only allocate a page when there is a page fault
+      \item \textbf{Pros:} Fast startup time for new process, small memory footprint
+      \item \textbf{Cons:} Process may appear sluggish at start due to multiple page faults, which may lead to thrashing
+    \end{itemize}
+
+    \subsection{Page Table Structure}
+    \begin{itemize}
+      \item \textbf{Overview:} Virtual memory results in huge logical memory space, huge no. of pages, huge page table $\rightarrow$ Results in (1): \underline{High overhead} (Every process has huge page table \& page table is per process), (2): \underline{Page Table spanning several frames} (less ideal as frames are scattered throughout physical memory space)
+      \item \textbf{Direct Paging:} Keeps all entries in single table
+      \begin{itemize}
+        \item e.g. Page size == 4KB, Virtual Addr is 64 bits long, Physical memory size == 16GB $\rightarrow$ No. of virtual pages = 2\textsuperscript{64}/2\textsuperscript{12} = 2\textsuperscript{52}, No. of physical pages = 2\textsuperscript{34}/2\textsuperscript{12} = 2\textsuperscript{22} (A lot less frames than pages)
+        \item Given PTE size == 8B, Page table size = 2\textsuperscript{52}*8 = 2\textsuperscript{55}B per process (way higher than physical memory size, not paging method is not feasible)
+      \end{itemize}
+      \item \textbf{2-level Paging:} Aims to solve problem of Direct Paging by paging the page table (process may not use entire virtual memory space, full page table is wasteful)
+      \begin{itemize}
+        \item \underline{Mechanism:} VA is split into \{Bits (M) for page directory \#, Bits (P-M) for page \#, Bits for offset\#\} $\rightarrow$ Split Page Table into Page Tablets $\rightarrow$ If original Page Table has 2\textsuperscript{P} entries \& there are 2\textsuperscript{M} Page Tablets, each Page Tablet contains 2\textsuperscript{P-M} entries $\rightarrow$ Single Page Directory keeps track of Page Tablets
+        \item \underline{Pros:} (1): Less overhead (\textit{Total overhead of page dir. + multiple page tablets \textless total overhead of single large page table}), (2): Enables page table structures to grow beyond size of a frame (\textit{Page dir. can point to page tablets residing in different disjoint frames}), (3): Can have empty entries in page dir. (\textit{Corr. page tablets do not need to be allocated})
+        \item \underline{Cons:} 2 memory accesses needed to get frame no. (1st access for page dir., 2nd access for page tablet) $\rightarrow$ TLB can eliminate page table accesses, but TLB misses will need to traverse more page tables
+      \end{itemize}
+      \item \textbf{Hierarchical Page Table:} Radix tree structure, a table in each level of hierarchy is sized to fit in 1 frame, an invalid entry in any level means entire subtree does not exist
+    \end{itemize}
+
+    \subsection{Inverted Page Table}
+    \begin{itemize}
+      \item \textbf{Mechanism:} Keeps mapping of Frame \# to \{pid, Page \#\}, where pid == Process ID \& Page \# == Logical page no. in corr. process $\rightarrow$ page \# is not unique amongst processes, pid + page \# can uniquely identify a memory page $\rightarrow$ Entries are ordered by frame \#, to look up Page X, need to search whole table
+      \item \textbf{Pros:} 1 table for all processes, huge savings
+      \item \textbf{Cons:} Slow translation
+      \item In practice, Inverted Page Table is used as auxiliary structure (find out which processes \& pages share frame X)
+    \end{itemize}
+
+    \subsection{Page Replacement Algorithms}
+    \begin{itemize}
+      \item \textbf{Overview:} No free frame during page fault $\rightarrow$ need to evict a memory page (Clean Page: not modified, no need write back to storage; Dirty page: modified, need to write back to storage)
+      \item Good Page Replacement Algo should minimize total no. of page faults
+    \end{itemize}
+    \begin{enumerate}
+      \item \textbf{Optimal Page Replacement (OPT)}
+      \begin{itemize}
+        \item Replace page that will not be needed again for longest period of time (Kick out MAX next use time)
+        \item Guarantees min. no. of page faults
+        \item \underline{Problems:} Not realizable as future knowledge of memory references is needed
+      \end{itemize}
+      \item \textbf{FIFO Page Replacement}
+      \begin{itemize}
+        \item Replace page that has the oldest loading time (Kick out MIN loaded at time)
+        \item OS maintains queue of resident page numbers (1st page number gets kicked)
+        \item \underline{Problems:} \# of frames $\uparrow$ $\rightarrow$ \# of page faults $\uparrow$ (Belady's Anomaly) as FIFO does not exploit temporal locality, bad performance in practice
+      \end{itemize}
+      \item \textbf{Least Recently Used (LRU)}
+      \begin{itemize}
+        \item Exploits temporal locality $\rightarrow$ Replace page that has not been used in longest time (Kick out MIN last use time)
+        \item Aims to approx. OPT \& does not suffer from Belady's Anomaly
+        \item Need to keep track of "Last Use Time"
+          \begin{itemize}
+            \item \underline{Counter:} Time counter that is incremented for every memory reference (Each PTE has a Last Use Time field), but need to search through all pages to find min. last use time, and overflow might occur as time-of-use keeps $\uparrow$
+            \item \underline{Stack:} Maintain a stack of page no., if page X is referenced, remove X from stack \& push X on top of stack, replace page at bottom of stack (no need search all entries), but this is not pure stack, hard to implement
+          \end{itemize}
+      \end{itemize}
+      \item \textbf{Second Chance (CLOCK)}
+      \begin{itemize}
+        \item Modified FIFO give 2nd chance to pages that were accessed
+        \item Each PTE has a Reference Bit (1: Accessed since last reset, 0: Not accessed)
+        \includegraphics[width=0.9\linewidth]{19_second_chance_algo.png}
+        \item \underline{Algorithm:} \\
+        1. Oldest FIFO page is selected (Victim Page)\\
+        2. If Ref Bit == 0, page is replaced\\
+        3.If Ref Bit  == 1, page is skipped, Ref Bit reset to 0, next FIFO page is selected, goto (2)
+        \item Degenerates into FIFO when Ref Bits of all pages == 1
+        \item \underbar{Implementation:} Circular list of all pages, pointer pointing to next potential victim page, finding a victim (advance until 1st page with '0' bit, clear any bits as pointer passes through)
+      \end{itemize}
+    \end{enumerate}
+
+    \subsection{Frame Allocation Policies}
+    \begin{itemize}
+      \item \textbf{Overview:} Consider N frames \& M processes competing for frames
+      \begin{enumerate}
+        \item \underline{Equal Allocation:} Each process gets N/M frames
+        \item \underline{Proportional Allocation:} Each process gets size\textsubscript{p}/size\textsubscript{total} * N frames
+      \end{enumerate}
+      \item \textbf{Local VS Global Replacement}
+      \begin{enumerate}
+        \item \underline{Local Replacement:} Victim page is selected among pages of a process that causes page fault, thrashing is limited to 1 process (\textit{Pros: \# of frames allocated to process remains constant, stable performance btw. runs, Cons: Frames allocated may be insufficient})
+        \item \underline{Global Replacement:} Victim page is selected among all frames (Process P can take frame from Process Q by evicting Q's frame) (\textit{Pros: Process that needs more frames can get from those that need less, Cons: Badly behaved process can steal frames from other process, can cause other process to thrash too})
+      \end{enumerate}
+      \item \textbf{Working Set:} Set of pages referenced by a process that is relatively constant in a period of time, occurs in stable region of Working Set Model
+      \begin{itemize}
+        \item When function is executing, references are constant VS When function terminates, references change to another set
+        \item Aims to find right \# of frames for a process
+      \end{itemize}
+    \end{itemize}
+    \includegraphics[width=0.8\linewidth]{20_working_set.png}
   \end{multicols*}
 \end{document}
