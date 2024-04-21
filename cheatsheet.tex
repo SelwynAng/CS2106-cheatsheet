@@ -419,7 +419,7 @@
       \item Each segment is composed of several pages instead of a contiguous memory region $\rightarrow$ Each segment has a Page table
       \item Segment can grow by allocating new page to add to its Page Table
       \item Segment Table's Base field is now base address of segment's Page Table instead of an address in physical memory
-      \includegraphics[width= 0.8\linewidth]{18_seg_with_pg.png}
+      \includegraphics[width= 0.9\linewidth]{18_seg_with_pg.png}
     \end{itemize}
 
     \section{Memory (Virtual)}
@@ -607,5 +607,100 @@
         \item High overhead (Link File requires a separate I-node \& takes up disk space)
       \end{itemize}
     \end{itemize}
+
+    \section{File Systems Implementation}
+    \subsection{Overview}
+    \begin{itemize}
+      \item \textbf{General Disk Structure:} 1D array of logical blocks (Logical Block: Small accessible unit, mapped into disk sectors) $\vert$ 1 Directory is allocated a logical block $\vert$ 1 file is split \& allocated a few logical blocks
+      \item \textbf{General Disk Organisation:}
+      \begin{enumerate}
+        \item \underline{Master Boot Record}: Located at sector 0  with Partition Table \& Simple Boot Code (Activates partitions by checking if they have bootable device)
+        \item \underline{Partition:} Each partition contains an independent file system (eg. Windows in partition C:, Linux in partition D:)
+        \item \underline{OS Boot Block:} Code to load OS into RAM
+        \item \underline{Partition Details:} Total \# of blocks, \# \& location of free/allocated blocks
+        \item \underline{Directory Structure:} Tracks files in a directory, map file name to file info
+        \item \underline{Files Info:} File Metadata
+        \item \underline{File Data:} File content
+      \end{enumerate}
+      \includegraphics[width=1.0\linewidth]{21_disk_organisation.png}
+    \end{itemize}
+
+    \subsection{Implementing File (File Info + File Data)}
+    \textbf{Overview:} A file is a collection of logical blocks $\rightarrow$ Need to allocate file data to logical blocks via allocation schemes (Internal Fragmentation occurs when file size != multiple of logical blocks)
+    \begin{enumerate}
+      \item \textbf{Contiguous Allocation}
+      \begin{itemize}
+        \item Allocates consecutive disk blocks to a file $\vert$ exists a table in Files Info to keep track of \{file name, start block \#, length in terms of blocks\} entries
+        \item \underline{Pros:} Simple to track, fast access (Contiguous logical blocks are closely located on same/adjacent disk sectors, no need to move disk head a lot)
+        \item \underline{Cons:} External Fragmentation (Holes created btw. logical blocks occupied by files), File size must be specified before (fit file in a appro. range of contiguous logical blocks)
+      \end{itemize}
+      \item \textbf{Linked List Allocation}
+      \begin{itemize}
+        \item Linked list of disk blocks (Each disk block stores next disk block \# via pointer \& actual file data) $\vert$ Last block in linked list has special value $\vert$ exists a table in File Info to keep track of \{File Name, Start Block \#, End Block \# \} entries (End block makes appending operation faster coz no need traverse linked list)
+        \item \underline{Pros:} Solves Fragmentation problem (Logical blocks need not be contiguous)
+        \item \underline{Cons:} Random access in file is slow (blocks can be in different disk sectors), Additional overhead to store pointers (part of disk block used for pointer), Less reliable (pointers may be wrong)
+      \end{itemize}
+      \item \textbf{Linked List V2.0 FAT Allocation}
+      \begin{itemize}
+        \item Move all block pointers into File Allocation Table (FAT) which is in memory 
+        \item Exists a table to track \{File Name, Start Block \#\} (No need store End Block \# since FAT is more efficient) $\vert$ FAT entry is of form \{Current Block \#, (FREE, Next Block \#, EOF or BAD)\}
+        \item \underline{FAT Version:} FAT16 (2\textsuperscript{16} entries, entry size == 16 bits since address of each FAT entry is stored) $\vert$ FAT32 (2\textsuperscript{32}, entry size == 32 bits)
+        \item \underline{Pros:} Faster random access (Linked list traversal is in memory instead of hard disk)
+        \item \underline{Cons:} Consume lots of memory (FAT tracks all disk blocks in partition)
+      \end{itemize}
+      \item \textbf{Indexed Allocation}
+      \begin{itemize}
+        \item Each file has an index block (contains an array of disk block addresses, IndexBlock[N] == Nth block address, Each address is pointer to actual logical block)
+        \item \underline{Pros:} Less memory overhead (only Index Block needs to be in memory), Fast direct access (Directly access via array indexing, no linked list traversals)
+        \item \underline{Cons:} Limited max file size (max \# of blocks == \# of Index Block entries), Index Block overhead (block is used for Index Block instead of data storage)
+      \end{itemize}
+      \item \textbf{Indexed Allocation Variants}
+      \begin{itemize}
+        \item Allow for larger files (via multiple index blocks)
+        \item \underline{Linked List Scheme:} Keep linked list of Index Blocks (but expensive due to traversal cost)
+        \item \underline{Multi-level Index:} Similar idea to multi-level paging
+        \item \underline{Combined Scheme:} Use Direct Index (fast access to small files), Multi-level index (large files)
+        \item \underline{Eg. of Combined Scheme: UNIX I-Node}
+        \includegraphics[width=0.8\linewidth]{22_unix_inode.jpeg}
+        \begin{itemize}
+          \item Every file/dir has a I-node data block associated to it (I-node consists of direct, indirect blocks)
+        \end{itemize}
+      \end{itemize}
+    \end{enumerate}
+
+    \subsection{Free Space Management (Partition Details)}
+    \begin{itemize}
+      \item \textbf{Overview:} Need to know which disk block is free to perform file allocation (Partition Details maintain free space information, remove free disk block from free space list for allocate, add free disk block to free space list for free)
+      \item \textbf{Bitmap:} Each disk block is represented by 1 bit (Bit 0: occupied block, Bit : free block $\vert$ provides good set of manipulation but need to keep in memory for efficiency reason)
+      \item \textbf{Linked List:} Linked list of disk blocks (Each disk block contains a \# of few disk block numbers OR a pointer to next free space disk block $\vert$ Easy to locate free block, only 1st pointer needs to be in memory, but high overhead)
+    \end{itemize}
+
+    \subsection{Implementing Directory (Directory Structure)}
+    \begin{itemize}
+      \item \textbf{Overview:} Keeps track of files in directory \& maps file name to file info $\vert$ Sub-directory stored as file entry with special type in a directory
+      \item \textbf{Linear List}: Directory consists of a linear list where each entry represents a file (stores file name \& metadata \& file info OR pointer to file info) $\rightarrow$ but requires linear search (inefficient for large directories)
+      \item \textbf{Hash Table:} Directory contains a hash table of size N where File Name is hashed into index K where 0 $\leq$ K $\leq$ N-1 (Fast lookup, but may have collisions)
+      \item \textbf{File Information:} (1): Store all file info in a directory entry, (2): Store only file name \& points to some data structure for other information
+      \item \textbf{FAT16 Directory Entry:}
+      \includegraphics[width=1.0\linewidth]{23_fat16_dir_entry.png}
+      \item \textbf{Ext2 Directory Entry:}
+      \includegraphics[width=1.0\linewidth]{24_ext2_dir_entry.png}
+    \end{itemize}
+
+    \subsection{File System in Action}
+    \textbf{File Creation (Create File F):}
+    \begin{enumerate}
+      \item Use full path name to locate parent directory
+      \item Search for file name F to avoid duplicates
+      \item Use Free Space List to find free disk blocks
+      \item Add an entry to parent directory (with relevant file info, file name, disk block info)
+    \end{enumerate}
+    \textbf{File Opening (Process P opens File F):}
+    \begin{enumerate}
+      \item Use full path name to locate File F
+      \item When F is located, F's file info is loaded into new entry E in system-wide table \& V in I-node table if not already present
+      \item Create an entry in P's table to point to E \& pointer from E's entry to V
+      \item Return file descriptor for further read/write operation
+    \end{enumerate}
   \end{multicols*}
 \end{document}
