@@ -419,7 +419,7 @@
       \item Each segment is composed of several pages instead of a contiguous memory region $\rightarrow$ Each segment has a Page table
       \item Segment can grow by allocating new page to add to its Page Table
       \item Segment Table's Base field is now base address of segment's Page Table instead of an address in physical memory
-      \includegraphics[width= 0.9\linewidth]{18_seg_with_pg.png}
+      \includegraphics[width=1.0\linewidth]{18_seg_with_pg.png}
     \end{itemize}
 
     \section{Memory (Virtual)}
@@ -508,7 +508,7 @@
       \begin{itemize}
         \item Modified FIFO give 2nd chance to pages that were accessed
         \item Each PTE has a Reference Bit (1: Accessed since last reset, 0: Not accessed)
-        \includegraphics[width=0.9\linewidth]{19_second_chance_algo.png}
+        \includegraphics[width=0.85\linewidth]{19_second_chance_algo.png}
         \item \underline{Algorithm:} \\
         1. Oldest FIFO page is selected (Victim Page)\\
         2. If Ref Bit == 0, page is replaced\\
@@ -580,6 +580,7 @@
         \item \underline{System wide Open File Table}: Keeps track of all open files in system, each entry points to a V-node entry
         \item \underline{System wide V-node Table}: Links with file on physical drive, contains info about file's physical location
       \end{enumerate}
+      \includegraphics[width=1.0\linewidth]{25_file_tables.png}
       \item Process makes file syscalls with file descriptor
       \item Every time a new file is opened by a process, a new FD entry is added to process' PPOFT
       \item A file can be opened twice by 2 processes $\rightarrow$ Need to have different entries for same file in SWOFT with different file offset (P0 may read/write to different portion of file from P1)
@@ -603,7 +604,7 @@
       \begin{itemize}
         \item Cycles are allowed (Hard to traverse since need to prevent infinite looping, hard to determine when to remove file/dir)
         \item Facilitated by Unix's Symbolic Link (special link file that contains path name of file)
-        \item If Symbolic Link is deleted $\rightarrow$ Link file is deleted, but not file $\vert$ If file is deleted $\rightarrow$ File is deleted, but Link File remains as dangling link
+        \item If Symbolic Link is deleted $\rightarrow$ Link file is deleted, but not file $\vert$ If file is deleted $\rightarrow$ File is deleted, but Link File remains as dangling link $\vert$ Changing name of linked file will cause symbolic link to be dangling
         \item High overhead (Link File requires a separate I-node \& takes up disk space)
       \end{itemize}
     \end{itemize}
