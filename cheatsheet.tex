@@ -457,7 +457,7 @@
       \item \textbf{Direct Paging:} Keeps all entries in single table
       \begin{itemize}
         \item e.g. Page size == 4KB, Virtual Addr is 64 bits long, Physical memory size == 16GB $\rightarrow$ No. of virtual pages = 2\textsuperscript{64}/2\textsuperscript{12} = 2\textsuperscript{52}, No. of physical pages = 2\textsuperscript{34}/2\textsuperscript{12} = 2\textsuperscript{22} (A lot less frames than pages)
-        \item Given PTE size == 8B, Page table size = 2\textsuperscript{52}*8 = 2\textsuperscript{55}B per process (way higher than physical memory size, not paging method is not feasible)
+        \item Given PTE size == 8B, Page table size = 2\textsuperscript{52}*8 = 2\textsuperscript{55}B per process (way higher than physical memory size, paging method is not feasible)
       \end{itemize}
       \item \textbf{2-level Paging:} Aims to solve problem of Direct Paging by paging the page table (process may not use entire virtual memory space, full page table is wasteful)
       \begin{itemize}
