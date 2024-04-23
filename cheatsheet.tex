@@ -349,8 +349,8 @@
           \item If buddy C of B exists, remove B \& C from list, merge B \& C to get larger block B' $\rightarrow$ Goto step 1, where B $\leftarrow$ B'
           \item Else, insert B to list in \verb|A[S]| (buddy of B is not free yet)
         \end{enumerate}
-        \item \underline{Locating Buddy:} B \& C are buddies of size 2\textsuperscript{S} if lowest S bits (0th - S-1th) of B \& C are identical \& Bit S is different
-        \item \underline{Analysis of Buddy System:} (+): Best case O(1), worst case O(logn) allocation \& deallocation time (due to tree structure), (-): Has internal \& external fragmentation
+        \item \underline{Locating Buddy:} B \& C are buddies of size 2\textsuperscript{S} if lowest S bits (0th - S-1th) of B \& C are identical \& Bit S is different (More sig. bits are identical too)
+        \item \underline{Analysis of Buddy System:} (+): O(1) allocation \& de-allocation time (since total \# of memory blocks is fixed), (-): Has internal \& external fragmentation
       \end{itemize}
     \end{itemize}
 
@@ -672,20 +672,24 @@
     \subsection{Free Space Management (Partition Details)}
     \begin{itemize}
       \item \textbf{Overview:} Need to know which disk block is free to perform file allocation (Partition Details maintain free space information, remove free disk block from free space list for allocate, add free disk block to free space list for free)
-      \item \textbf{Bitmap:} Each disk block is represented by 1 bit (Bit 0: occupied block, Bit : free block $\vert$ provides good set of manipulation but need to keep in memory for efficiency reason)
+      \item \textbf{Bitmap:} Each disk block is represented by 1 bit (Bit 0: occupied block, Bit 1: free block $\vert$ provides good set of manipulation but need to keep in memory for efficiency reason)
       \item \textbf{Linked List:} Linked list of disk blocks (Each disk block contains a \# of few disk block numbers OR a pointer to next free space disk block $\vert$ Easy to locate free block, only 1st pointer needs to be in memory, but high overhead)
     \end{itemize}
 
     \subsection{Implementing Directory (Directory Structure)}
     \begin{itemize}
       \item \textbf{Overview:} Keeps track of files in directory \& maps file name to file info $\vert$ Sub-directory stored as file entry with special type in a directory
-      \item \textbf{Linear List}: Directory consists of a linear list where each entry represents a file (stores file name \& metadata \& file info OR pointer to file info) $\rightarrow$ but requires linear search (inefficient for large directories)
+      \item \textbf{Linear List}: Directory consists of a list where each entry represents a file (stores file name \& metadata \& file info OR pointer to file info) $\rightarrow$ but requires linear search (inefficient for large directories)
       \item \textbf{Hash Table:} Directory contains a hash table of size N where File Name is hashed into index K where 0 $\leq$ K $\leq$ N-1 (Fast lookup, but may have collisions)
-      \item \textbf{File Information:} (1): Store all file info in a directory entry, (2): Store only file name \& points to some data structure for other information
+      \item \textbf{File Info:} (1): Store all file info in a directory entry, (2): Store only file name \& points to some data structure for other info
+      \item \textbf{FAT16 Layout:}
+      \includegraphics[width=0.75\linewidth]{26_fat16_layout.png}
       \item \textbf{FAT16 Directory Entry:}
-      \includegraphics[width=1.0\linewidth]{23_fat16_dir_entry.png}
+      \includegraphics[width=0.75\linewidth]{23_fat16_dir_entry.png}
+      \item \textbf{Ext2 Layout:} \\
+      \includegraphics[width=0.75\linewidth]{27_ext2_layout.png}
       \item \textbf{Ext2 Directory Entry:}
-      \includegraphics[width=1.0\linewidth]{24_ext2_dir_entry.png}
+      \includegraphics[width=0.75\linewidth]{24_ext2_dir_entry.png}
     \end{itemize}
 
     \subsection{File System in Action}
@@ -700,7 +704,7 @@
     \begin{enumerate}
       \item Use full path name to locate File F
       \item When F is located, F's file info is loaded into new entry E in system-wide table \& V in I-node table if not already present
-      \item Create an entry in P's table to point to E \& pointer from E's entry to V
+      \item Create entry in P's table pointing to E \& make E point to V
       \item Return file descriptor for further read/write operation
     \end{enumerate}
   \end{multicols*}
