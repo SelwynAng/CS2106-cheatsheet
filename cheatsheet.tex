@@ -598,14 +598,14 @@
       \begin{itemize}
         \item A file can be shared (only 1 copy of actual content but appears in multiple directories, 2 file names referring to same file content)
         \item Facilitated by Unix's Hard Link (Dir A is owner of File F, Dir B wants to share F $\rightarrow$ A \& B have separate pointers to F in disk)
-        \item Low overhead (Only pointers are added in directory), Deletion problems can be settled by Open Count (Delete file when 0)
+        \item Low overhead (Only pointers are added in directory), Deletion problems can be settled by Open Count (Delete file when 0), Cannot hard link to directories
       \end{itemize}
       \item \textbf{General Graph:}
       \begin{itemize}
         \item Cycles are allowed (Hard to traverse since need to prevent infinite looping, hard to determine when to remove file/dir)
         \item Facilitated by Unix's Symbolic Link (special link file that contains path name of file)
         \item If Symbolic Link is deleted $\rightarrow$ Link file is deleted, but not file $\vert$ If file is deleted $\rightarrow$ File is deleted, but Link File remains as dangling link $\vert$ Changing name of linked file will cause symbolic link to be dangling
-        \item High overhead (Link File requires a separate I-node \& takes up disk space)
+        \item High overhead (Link File requires a separate I-node \& takes up disk space), Can symbolic link to directories
       \end{itemize}
     \end{itemize}
 
