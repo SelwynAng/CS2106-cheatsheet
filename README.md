@@ -1,2 +1,3 @@
-Cheastsheet for CS2106 Introduction to Operating Systems @ National University of Singapore
+## CS2106 Cheatsheet
+Introduction to Operating Systems @ National University of Singapore \
 Latex layout credits to @jovyntls
